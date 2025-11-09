@@ -6,15 +6,15 @@ allows the surrounding `redux-form`-decorated component to trigger its
 
 It is only useful if you are:
 
-* performing your submission from inside your form component by passing
+- performing your submission from inside your form component by passing
   `onSubmit={this.props.handleSubmit(this.mySubmitFunction)}` to your `<form>`
   component
-* **AND EITHER:**
-  * initiating your submission via the
-    [`submit()` Instance API](http://redux-form.com/7.2.3/docs/api/ReduxForm.md/#-submit-promise-)
+- **AND EITHER:**
+  - initiating your submission via the
+    [`submit()` Instance API](https://redux-form.com/8.2.2/docs/api/ReduxForm.md/#-submit-promise-)
     (i.e. calling it directly on a reference to your decorated form component)
-  * initiating your submission by
-    [dispatching the `submit(form)` action](http://redux-form.com/7.2.3/examples/remoteSubmit/)
+  - initiating your submission by
+    [dispatching the `submit(form)` action](https://redux-form.com/8.2.2/examples/remoteSubmit/)
 
 If you are passing in your `onSubmit` function as a config parameter or prop,
 this component will do nothing for you.

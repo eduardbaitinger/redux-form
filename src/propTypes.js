@@ -16,6 +16,7 @@ export const formPropTypes = {
   pristine: bool.isRequired, // true if the values are the same as initialValues
   pure: bool.isRequired, // if true, implements shouldComponentUpdate
   submitting: bool.isRequired, // true if the form is in the process of being submitted
+  submitAsSideEffect: bool.isRequired, // true if onSubmit result will be dispatched
   submitFailed: bool.isRequired, // true if the form was submitted and failed for any reason
   submitSucceeded: bool.isRequired, // true if the form was successfully submitted
   valid: bool.isRequired, // true if there are no validation errors
@@ -38,11 +39,14 @@ export const formPropTypes = {
   blur: func.isRequired, // action to mark a field as blurred
   change: func.isRequired, // action to change the value of a field
   clearAsyncError: func.isRequired, // action to clear the async error of a field
+  clearFields: func.isRequired, // action to clean fields values for all fields
+  clearSubmitErrors: func.isRequired, // action to remove submitErrors and error
   destroy: func.isRequired, // action to destroy the form's data in Redux
   dispatch: func.isRequired, // the Redux dispatch action
   handleSubmit: func.isRequired, // function to submit the form
   initialize: func.isRequired, // action to initialize form data
   reset: func.isRequired, // action to reset the form data to previously initialized values
+  resetSection: func.isRequired, // action to reset the form sections data to previously initialized values
   touch: func.isRequired, // action to mark fields as touched
   submit: func.isRequired, // action to trigger a submission of the specified form
   untouch: func.isRequired, // action to mark fields as untouched

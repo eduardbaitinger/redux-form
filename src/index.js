@@ -1,15 +1,15 @@
 // @flow
 import actions from './actions'
-import * as _actionTypes from './actionTypes'
-export {
-  default as defaultShouldAsyncValidate
-} from './defaultShouldAsyncValidate'
+export { default as actionTypes } from './actionTypes'
+export { ReduxFormContext } from './ReduxFormContext'
+export { default as defaultShouldAsyncValidate } from './defaultShouldAsyncValidate'
 export { default as defaultShouldValidate } from './defaultShouldValidate'
 export { default as defaultShouldError } from './defaultShouldError'
 export { default as defaultShouldWarn } from './defaultShouldWarn'
 export { default as Form } from './Form'
+export { default as FormName } from './FormName'
 export { default as FormSection } from './FormSection'
-export { default as SubmissionError } from './SubmissionError'
+export { SubmissionError } from './SubmissionError'
 // alias for propTypes
 export {
   default as propTypes,
@@ -35,6 +35,7 @@ export { default as getFormMeta } from './getFormMeta'
 export { default as getFormAsyncErrors } from './getFormAsyncErrors'
 export { default as getFormSyncWarnings } from './getFormSyncWarnings'
 export { default as getFormSubmitErrors } from './getFormSubmitErrors'
+export { default as isAsyncValidating } from './isAsyncValidating'
 export { default as isDirty } from './isDirty'
 export { default as isInvalid } from './isInvalid'
 export { default as isPristine } from './isPristine'
@@ -45,7 +46,6 @@ export { default as hasSubmitFailed } from './hasSubmitFailed'
 export { default as reduxForm } from './reduxForm'
 export { default as reducer } from './reducer'
 export { default as values } from './values'
-export const actionTypes = _actionTypes
 export const arrayInsert = actions.arrayInsert
 export const arrayMove = actions.arrayMove
 export const arrayPop = actions.arrayPop
@@ -61,12 +61,14 @@ export const blur = actions.blur
 export const change = actions.change
 export const clearAsyncError = actions.clearAsyncError
 export const clearFields = actions.clearFields
+export const clearSubmit = actions.clearSubmit
 export const clearSubmitErrors = actions.clearSubmitErrors
 export const destroy = actions.destroy
 export const focus = actions.focus
 export const initialize = actions.initialize
 export const registerField = actions.registerField
 export const reset = actions.reset
+export const resetSection = actions.resetSection
 export const setSubmitFailed = actions.setSubmitFailed
 export const setSubmitSucceeded = actions.setSubmitSucceeded
 export const startAsyncValidation = actions.startAsyncValidation
@@ -78,3 +80,4 @@ export const touch = actions.touch
 export const unregisterField = actions.unregisterField
 export const untouch = actions.untouch
 export const updateSyncWarnings = actions.updateSyncWarnings
+export const updateSyncErrors = actions.updateSyncErrors

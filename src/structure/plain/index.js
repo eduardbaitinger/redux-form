@@ -7,7 +7,7 @@ import deleteIn from './deleteIn'
 import keys from './keys'
 import type { Structure } from '../../types'
 
-const structure: Structure<Object, Array<*>> = {
+const structure: Structure<Object, Array<any>> = {
   allowsArrayErrors: true,
   empty: {},
   emptyList: [],
@@ -21,6 +21,8 @@ const structure: Structure<Object, Array<*>> = {
   size: array => (array ? array.length : 0),
   some: (items, callback) => items.some(callback),
   splice,
+  equals: (a, b) => b.every(val => ~a.indexOf(val)),
+  orderChanged: (a, b) => b.some((val, index) => val !== a[index]),
   toJS: value => value
 }
 

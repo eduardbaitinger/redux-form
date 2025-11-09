@@ -1,11 +1,21 @@
+[version]
+0.84.0
+
 [ignore]
-./node_modules/**
+<PROJECT_ROOT>/dist/.*
+<PROJECT_ROOT>/es/.*
+<PROJECT_ROOT>/lib/.*
 
-[include]
-./src/**
-
-[libs]
+[lints]
+all=warn
+unclear-type=off
+sketchy-null-bool=off
+untyped-import=off
+sketchy-null-string=off
+sketchy-null-number=off
+unsafe-getters-setters=off
+inexact-spread=off
+unnecessary-invariant=off
 
 [options]
-esproposal.decorators=ignore
-unsafe.enable_getters_and_setters=true
+include_warnings=true

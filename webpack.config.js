@@ -1,39 +1,45 @@
 'use strict'
-var webpack = require('webpack')
-var LodashModuleReplacementPlugin = require('lodash-webpack-plugin')
+const webpack = require('webpack')
+const LodashModuleReplacementPlugin = require('lodash-webpack-plugin')
 
-var env = process.env.NODE_ENV
+const env = process.env.NODE_ENV
 
-var reactExternal = {
-  root: 'React',
-  commonjs2: 'react',
-  commonjs: 'react',
-  amd: 'react'
-}
-
-var reduxExternal = {
-  root: 'Redux',
-  commonjs2: 'redux',
-  commonjs: 'redux',
-  amd: 'redux'
-}
-
-var reactReduxExternal = {
-  root: 'ReactRedux',
-  commonjs2: 'react-redux',
-  commonjs: 'react-redux',
-  amd: 'react-redux'
-}
-
-var config = {
+module.exports = {
   externals: {
-    react: reactExternal,
-    redux: reduxExternal,
-    'react-redux': reactReduxExternal
+    react: {
+      root: 'React',
+      commonjs2: 'react',
+      commonjs: 'react',
+      amd: 'react'
+    },
+    redux: {
+      root: 'Redux',
+      commonjs2: 'redux',
+      commonjs: 'redux',
+      amd: 'redux'
+    },
+    'react-redux': {
+      root: 'ReactRedux',
+      commonjs2: 'react-redux',
+      commonjs: 'react-redux',
+      amd: 'react-redux'
+    },
+    immutable: {
+      root: 'Immutable',
+      commonjs2: 'immutable',
+      commonjs: 'immutable',
+      amd: 'immutable'
+    }
   },
+  devtool: env === 'production' ? 'source-map' : false,
+  mode: env === 'production' ? 'production' : 'development',
   module: {
-    loaders: [
-      { test: /\.js$/, loaders: ['babel-loader'], exclude: /node_modules/ }
+    rules: [
+      {
+        test: /\.js$/,
+        loader: 'babel-loader',
+        exclude: /node_modules/
+      }
     ]
   },
   output: {
@@ -47,18 +53,3 @@ var config = {
     })
   ]
 }
-
-if (env === 'production') {
-  config.plugins.push(
-    new webpack.optimize.UglifyJsPlugin({
-      compressor: {
-        pure_getters: true,
-        unsafe: true,
-        unsafe_comps: true,
-        warnings: false
-      }
-    })
-  )
-}
-
-module.exports = config

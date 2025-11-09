@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { Provider } from 'react-redux'
 import { combineReducers as plainCombineReducers, createStore } from 'redux'
-import { combineReducers as immutableCombineReducers } from 'redux-immutablejs'
+import { combineReducers as immutableCombineReducers } from 'redux-immutable'
 import TestUtils from 'react-dom/test-utils'
 import createReduxForm from '../createReduxForm'
 import createReducer from '../createReducer'
@@ -60,6 +60,24 @@ const describeFields = (name, structure, combineReducers, setup) => {
           </div>
         )
       }).toThrow(/must be inside a component decorated with reduxForm/)
+    })
+
+    it('should throw an error if invalid component prop is provided', () => {
+      const store = makeStore()
+      const notAComponent = {}
+      class Form extends Component {
+        render() {
+          return <Fields names={['foo', 'bar']} component={notAComponent} />
+        }
+      }
+      const TestForm = reduxForm({ form: 'testForm' })(Form)
+      expect(() => {
+        TestUtils.renderIntoDocument(
+          <Provider store={store}>
+            <TestForm />
+          </Provider>
+        )
+      }).toThrow(/Element type is invalid/)
     })
 
     it('should warn if no names prop is provided', () => {
@@ -292,23 +310,23 @@ const describeFields = (name, structure, combineReducers, setup) => {
           }
         }
       })
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <div>
-              <Fields names={['foo', 'bar']} component={TestInput} />
+              <Fields names={['foo', 'bar']} component={TestInput} ref={ref} />
             </div>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.names).toEqual(['foo', 'bar'])
+      expect(ref.current.names).toEqual(['foo', 'bar'])
     })
 
     it('should provide values getter', () => {
@@ -320,23 +338,23 @@ const describeFields = (name, structure, combineReducers, setup) => {
           }
         }
       })
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <div>
-              <Fields names={['foo', 'bar']} component={TestInput} />
+              <Fields names={['foo', 'bar']} component={TestInput} ref={ref} />
             </div>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.values).toEqual({ foo: 'fooValue', bar: 'barValue' })
+      expect(ref.current.values).toEqual({ foo: 'fooValue', bar: 'barValue' })
     })
 
     it('should provide dirty getter that is true when any field is dirty', () => {
@@ -352,23 +370,23 @@ const describeFields = (name, structure, combineReducers, setup) => {
           }
         }
       })
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <div>
-              <Fields names={['foo', 'bar']} component={TestInput} />
+              <Fields names={['foo', 'bar']} component={TestInput} ref={ref} />
             </div>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.dirty).toBe(true)
+      expect(ref.current.dirty).toBe(true)
     })
 
     it('should provide dirty getter that is false when all fields are pristine', () => {
@@ -384,23 +402,23 @@ const describeFields = (name, structure, combineReducers, setup) => {
           }
         }
       })
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <div>
-              <Fields names={['foo', 'bar']} component={TestInput} />
+              <Fields names={['foo', 'bar']} component={TestInput} ref={ref} />
             </div>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.dirty).toBe(false)
+      expect(ref.current.dirty).toBe(false)
     })
 
     it('should provide pristine getter that is false when dirty', () => {
@@ -411,23 +429,23 @@ const describeFields = (name, structure, combineReducers, setup) => {
           }
         }
       })
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <div>
-              <Fields names={['foo']} component={TestInput} />
+              <Fields names={['foo']} component={TestInput} ref={ref} />
             </div>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.pristine).toBe(false)
+      expect(ref.current.pristine).toBe(false)
     })
 
     it('should provide pristine getter that is true when pristine', () => {
@@ -441,23 +459,23 @@ const describeFields = (name, structure, combineReducers, setup) => {
           }
         }
       })
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <div>
-              <Fields names={['foo']} component={TestInput} />
+              <Fields names={['foo']} component={TestInput} ref={ref} />
             </div>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.pristine).toBe(true)
+      expect(ref.current.pristine).toBe(true)
     })
 
     it('should have value set to initial value on first render', () => {
@@ -481,8 +499,9 @@ const describeFields = (name, structure, combineReducers, setup) => {
         </Provider>
       )
       expect(input).toHaveBeenCalled()
-      expect(input.mock.calls[0][0].foo.input.value).toBe('fooValue')
-      expect(input.mock.calls[0][0].bar.input.value).toBe('barValue')
+      expect(input).toHaveBeenCalledTimes(2)
+      expect(input.mock.calls[1][0].foo.input.value).toBe('fooValue')
+      expect(input.mock.calls[1][0].bar.input.value).toBe('barValue')
     })
 
     it('should provide sync error for array field', () => {
@@ -514,11 +533,11 @@ const describeFields = (name, structure, combineReducers, setup) => {
         </Provider>
       )
       expect(input).toHaveBeenCalled()
-      expect(input).toHaveBeenCalledTimes(1)
-      expect(input.mock.calls[0][0].foo[0].meta.valid).toBe(false)
-      expect(input.mock.calls[0][0].foo[0].meta.error).toBe('first error')
-      expect(input.mock.calls[0][0].foo[1].meta.valid).toBe(false)
-      expect(input.mock.calls[0][0].foo[1].meta.error).toBe('second error')
+      expect(input).toHaveBeenCalledTimes(2)
+      expect(input.mock.calls[1][0].foo[0].meta.valid).toBe(false)
+      expect(input.mock.calls[1][0].foo[0].meta.error).toBe('first error')
+      expect(input.mock.calls[1][0].foo[1].meta.valid).toBe(false)
+      expect(input.mock.calls[1][0].foo[1].meta.error).toBe('second error')
     })
 
     it('should provide sync error for array-of-objects field', () => {
@@ -557,9 +576,9 @@ const describeFields = (name, structure, combineReducers, setup) => {
         </Provider>
       )
       expect(input).toHaveBeenCalled()
-      expect(input).toHaveBeenCalledTimes(1)
-      expect(input.mock.calls[0][0].authors[0].meta.valid).toBe(false)
-      expect(input.mock.calls[0][0].authors[0].meta.error).toBe('Object Error')
+      expect(input).toHaveBeenCalledTimes(2)
+      expect(input.mock.calls[1][0].authors[0].meta.valid).toBe(false)
+      expect(input.mock.calls[1][0].authors[0].meta.error).toBe('Object Error')
     })
 
     it('should provide sync warning for array field', () => {
@@ -591,9 +610,9 @@ const describeFields = (name, structure, combineReducers, setup) => {
         </Provider>
       )
       expect(input).toHaveBeenCalled()
-      expect(input).toHaveBeenCalledTimes(1)
-      expect(input.mock.calls[0][0].foo[0].meta.warning).toBe('first warning')
-      expect(input.mock.calls[0][0].foo[1].meta.warning).toBe('second warning')
+      expect(input).toHaveBeenCalledTimes(2)
+      expect(input.mock.calls[1][0].foo[0].meta.warning).toBe('first warning')
+      expect(input.mock.calls[1][0].foo[1].meta.warning).toBe('second warning')
     })
 
     it('should provide sync warning for array-of-objects field', () => {
@@ -632,10 +651,175 @@ const describeFields = (name, structure, combineReducers, setup) => {
         </Provider>
       )
       expect(input).toHaveBeenCalled()
-      expect(input).toHaveBeenCalledTimes(1)
-      expect(input.mock.calls[0][0].authors[0].meta.warning).toBe(
-        'Object Error'
+      expect(input).toHaveBeenCalledTimes(2)
+      expect(input.mock.calls[1][0].authors[0].meta.warning).toBe('Object Error')
+    })
+
+    it('should provide Fields validation for each field', () => {
+      const store = makeStore({
+        testForm: {
+          values: {
+            author: {
+              firstName: 'Erik',
+              lastName: 'Rasmussen'
+            }
+          }
+        }
+      })
+      const input = jest.fn(props => <input {...props.input} />)
+      const validate = jest.fn(() => 'Error')
+      class Form extends Component {
+        render() {
+          return (
+            <div>
+              <Fields names={['author']} component={input} validate={validate} />
+            </div>
+          )
+        }
+      }
+      const TestForm = reduxForm({
+        form: 'testForm'
+      })(Form)
+      TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          <TestForm />
+        </Provider>
       )
+      expect(input).toHaveBeenCalled()
+      expect(input).toHaveBeenCalledTimes(2)
+      input.mock.calls[0][0].author.input.onChange('FIDO')
+      expect(input.mock.calls[2][0].author.meta.valid).toBe(false)
+      expect(input.mock.calls[2][0].author.meta.error).toBe('Error')
+    })
+
+    it('should provide Fields warning for each field', () => {
+      const store = makeStore({
+        testForm: {
+          values: {
+            foo: '',
+            bar: ''
+          }
+        }
+      })
+      const input = jest.fn(props => <input {...props.input} />)
+      const warn = jest.fn(() => 'warning')
+      class Form extends Component {
+        render() {
+          return (
+            <div>
+              <Fields names={['foo', 'bar']} component={input} warn={warn} />
+            </div>
+          )
+        }
+      }
+      const TestForm = reduxForm({
+        form: 'testForm'
+      })(Form)
+      TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          <TestForm />
+        </Provider>
+      )
+      expect(input).toHaveBeenCalled()
+      expect(input).toHaveBeenCalledTimes(2)
+
+      input.mock.calls[0][0].foo.input.onChange('FIDO')
+      expect(input.mock.calls[2][0].foo.meta.warning).toBe('warning')
+      expect(input.mock.calls[2][0].bar.meta.warning).toBe('warning')
+    })
+
+    it('should provide Fields validation for one field', () => {
+      const store = makeStore({
+        testForm: {
+          values: {
+            author: {
+              firstName: 'Erik',
+              lastName: 'Rasmussen'
+            },
+            editor: {
+              firstName: 'John',
+              lastName: 'Jones'
+            }
+          }
+        }
+      })
+      const input = jest.fn(props => <input {...props.input} />)
+      const validate = jest.fn(() => 'Error')
+      class Form extends Component {
+        render() {
+          return (
+            <div>
+              <Fields
+                names={['author', 'editor']}
+                component={input}
+                validate={{
+                  author: validate
+                }}
+              />
+            </div>
+          )
+        }
+      }
+      const TestForm = reduxForm({
+        form: 'testForm'
+      })(Form)
+      TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          <TestForm />
+        </Provider>
+      )
+      expect(input).toHaveBeenCalled()
+      expect(input).toHaveBeenCalledTimes(2)
+      input.mock.calls[0][0].author.input.onChange('FIDO')
+      expect(input.mock.calls[2][0].author.meta.valid).toBe(false)
+      expect(input.mock.calls[2][0].author.meta.error).toBe('Error')
+      expect(input.mock.calls[2][0].editor.meta.valid).toBe(true)
+    })
+
+    it('should provide Fields warning for a field', () => {
+      const store = makeStore({
+        testForm: {
+          values: {
+            foo: '',
+            bar: ''
+          },
+          fields: {
+            foo: {
+              touched: true
+            }
+          }
+        }
+      })
+      const input = jest.fn(props => <input {...props.input} />)
+      class Form extends Component {
+        render() {
+          return (
+            <div>
+              <Fields
+                names={['foo', 'bar']}
+                component={input}
+                warn={{
+                  foo: () => 'warning'
+                }}
+              />
+            </div>
+          )
+        }
+      }
+      const TestForm = reduxForm({
+        form: 'testForm'
+      })(Form)
+      TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          <TestForm />
+        </Provider>
+      )
+      expect(input).toHaveBeenCalled()
+      expect(input).toHaveBeenCalledTimes(2)
+
+      input.mock.calls[0][0].foo.input.onChange('FIDO')
+      expect(input.mock.calls[2][0].foo.meta.warning).toBe('warning')
+      expect(input.mock.calls[2][0].bar.meta.warning).toBeUndefined()
     })
 
     it('should provide access to rendered component', () => {
@@ -647,11 +831,12 @@ const describeFields = (name, structure, combineReducers, setup) => {
           }
         }
       })
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <div>
-              <Fields names={['foo', 'bar']} component={TestInput} withRef />
+              <Fields names={['foo', 'bar']} component={TestInput} forwardRef ref={ref} />
             </div>
           )
         }
@@ -662,10 +847,9 @@ const describeFields = (name, structure, combineReducers, setup) => {
           <TestForm />
         </Provider>
       )
-      const field = TestUtils.findRenderedComponentWithType(dom, Fields)
       const input = TestUtils.findRenderedComponentWithType(dom, TestInput)
 
-      expect(field.getRenderedComponent()).toBe(input)
+      expect(ref.current.getRenderedComponent()).toBe(input)
     })
 
     it('should unregister fields when unmounted', () => {
@@ -683,9 +867,7 @@ const describeFields = (name, structure, combineReducers, setup) => {
             <div>
               {!toggle && <Fields names={['dog', 'cat']} component={input} />}
               {toggle && <Fields names={['cow', 'ewe']} component={input} />}
-              <button onClick={() => this.setState({ toggle: true })}>
-                Toggle
-              </button>
+              <button onClick={() => this.setState({ toggle: true })}>Toggle</button>
             </div>
           )
         }
@@ -748,9 +930,7 @@ const describeFields = (name, structure, combineReducers, setup) => {
           return (
             <div>
               <Fields names={[this.state.field]} component={input} />
-              <button onClick={() => this.setState({ field: 'bar' })}>
-                Change
-              </button>
+              <button onClick={() => this.setState({ field: 'bar' })}>Change</button>
             </div>
           )
         }
@@ -782,23 +962,23 @@ const describeFields = (name, structure, combineReducers, setup) => {
           <input {...bar.input} />
         </div>
       )
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <FormSection name="foo">
-              <Fields names={['foo', 'bar']} component={renderFields} />
+              <Fields names={['foo', 'bar']} component={renderFields} ref={ref} />
             </FormSection>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.names).toEqual(['foo.foo', 'foo.bar'])
+      expect(ref.current.names).toEqual(['foo.foo', 'foo.bar'])
     })
     it('should prefix name getter when inside multiple FormSection', () => {
       const store = makeStore()
@@ -808,25 +988,25 @@ const describeFields = (name, structure, combineReducers, setup) => {
           <input {...bar.input} />
         </div>
       )
+      const ref = React.createRef()
       class Form extends Component {
         render() {
           return (
             <FormSection name="foo">
               <FormSection name="fighter">
-                <Fields names={['foo', 'bar']} component={renderFields} />
+                <Fields names={['foo', 'bar']} component={renderFields} ref={ref} />
               </FormSection>
             </FormSection>
           )
         }
       }
       const TestForm = reduxForm({ form: 'testForm' })(Form)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
           <TestForm />
         </Provider>
       )
-      const stub = TestUtils.findRenderedComponentWithType(dom, Fields)
-      expect(stub.names).toEqual(['foo.fighter.foo', 'foo.fighter.bar'])
+      expect(ref.current.names).toEqual(['foo.fighter.foo', 'foo.fighter.bar'])
     })
 
     it('should prefix name when inside FormSection', () => {
@@ -929,14 +1109,8 @@ const describeFields = (name, structure, combineReducers, setup) => {
           const { highlighted } = this.state
           return (
             <div>
-              <Fields
-                names={['foo']}
-                highlighted={highlighted}
-                component={renderFields}
-              />
-              <button
-                onClick={() => this.setState({ highlighted: highlighted + 1 })}
-              >
+              <Fields names={['foo']} highlighted={highlighted} component={renderFields} />
+              <button onClick={() => this.setState({ highlighted: highlighted + 1 })}>
                 Change
               </button>
             </div>
@@ -974,14 +1148,8 @@ const describeFields = (name, structure, combineReducers, setup) => {
           renderSpy()
           return (
             <div>
-              <Fields
-                names={['myField']}
-                component={input}
-                props={{ rel: 'test' }}
-              />
-              <button onClick={() => this.setState({ foo: 'qux' })}>
-                Change
-              </button>
+              <Fields names={['myField']} component={input} props={{ rel: 'test' }} />
+              <button onClick={() => this.setState({ foo: 'qux' })}>Change</button>
             </div>
           )
         }
@@ -1231,12 +1399,7 @@ const describeFields = (name, structure, combineReducers, setup) => {
         render() {
           return (
             <div>
-              <Fields
-                names={['age']}
-                component={input}
-                format={format}
-                parse={parse}
-              />
+              <Fields names={['age']} component={input} format={format} parse={parse} />
             </div>
           )
         }
@@ -1331,11 +1494,9 @@ const describeFields = (name, structure, combineReducers, setup) => {
 
       // confirm input rendered with error
       expect(confirmInput).toHaveBeenCalled()
-      expect(confirmInput).toHaveBeenCalledTimes(1)
-      expect(confirmInput.mock.calls[0][0].confirm.meta.valid).toBe(false)
-      expect(confirmInput.mock.calls[0][0].confirm.meta.error).toBe(
-        'Must match!'
-      )
+      expect(confirmInput).toHaveBeenCalledTimes(2)
+      expect(confirmInput.mock.calls[1][0].confirm.meta.valid).toBe(false)
+      expect(confirmInput.mock.calls[1][0].confirm.meta.error).toBe('Must match!')
 
       // update password field so that they match
       passwordInput.mock.calls[0][0].password.input.onChange('redux-form rocks')
@@ -1344,9 +1505,9 @@ const describeFields = (name, structure, combineReducers, setup) => {
       expect(passwordInput).toHaveBeenCalledTimes(2)
 
       // confirm input should also rerender, but with no error
-      expect(confirmInput).toHaveBeenCalledTimes(2)
-      expect(confirmInput.mock.calls[1][0].confirm.meta.valid).toBe(true)
-      expect(confirmInput.mock.calls[1][0].confirm.meta.error).toBe(undefined)
+      expect(confirmInput).toHaveBeenCalledTimes(3)
+      expect(confirmInput.mock.calls[2][0].confirm.meta.valid).toBe(true)
+      expect(confirmInput.mock.calls[2][0].confirm.meta.error).toBe(undefined)
     })
 
     it('should rerender when sync error is cleared', () => {
@@ -1377,23 +1538,21 @@ const describeFields = (name, structure, combineReducers, setup) => {
 
       // username input rendered
       expect(usernameInput).toHaveBeenCalled()
-      expect(usernameInput).toHaveBeenCalledTimes(1)
-
-      // username field has error
-      expect(usernameInput.mock.calls[0][0].username.meta.valid).toBe(false)
-      expect(usernameInput.mock.calls[0][0].username.meta.error).toBe(
-        'Required'
-      )
-
-      // update username field so it passes
-      usernameInput.mock.calls[0][0].username.input.onChange('erikras')
-
-      // username input rerendered
       expect(usernameInput).toHaveBeenCalledTimes(2)
 
+      // username field has error
+      expect(usernameInput.mock.calls[1][0].username.meta.valid).toBe(false)
+      expect(usernameInput.mock.calls[1][0].username.meta.error).toBe('Required')
+
+      // update username field so it passes
+      usernameInput.mock.calls[1][0].username.input.onChange('erikras')
+
+      // username input rerendered
+      expect(usernameInput).toHaveBeenCalledTimes(4)
+
       // should be valid now
-      expect(usernameInput.mock.calls[1][0].username.meta.valid).toBe(true)
-      expect(usernameInput.mock.calls[1][0].username.meta.error).toBe(undefined)
+      expect(usernameInput.mock.calls[3][0].username.meta.valid).toBe(true)
+      expect(usernameInput.mock.calls[3][0].username.meta.error).toBe(undefined)
     })
 
     it('should rerender when sync warning changes', () => {
@@ -1410,9 +1569,7 @@ const describeFields = (name, structure, combineReducers, setup) => {
       const warn = values => {
         const password = getIn(values, 'password')
         const confirm = getIn(values, 'confirm')
-        return password === confirm
-          ? {}
-          : { confirm: 'Should match. Or not. Whatever.' }
+        return password === confirm ? {} : { confirm: 'Should match. Or not. Whatever.' }
       }
       class Form extends Component {
         render() {
@@ -1440,8 +1597,8 @@ const describeFields = (name, structure, combineReducers, setup) => {
 
       // confirm input rendered with warning
       expect(confirmInput).toHaveBeenCalled()
-      expect(confirmInput).toHaveBeenCalledTimes(1)
-      expect(confirmInput.mock.calls[0][0].confirm.meta.warning).toBe(
+      expect(confirmInput).toHaveBeenCalledTimes(2)
+      expect(confirmInput.mock.calls[1][0].confirm.meta.warning).toBe(
         'Should match. Or not. Whatever.'
       )
 
@@ -1452,8 +1609,8 @@ const describeFields = (name, structure, combineReducers, setup) => {
       expect(passwordInput).toHaveBeenCalledTimes(2)
 
       // confirm input should also rerender, but with no warning
-      expect(confirmInput).toHaveBeenCalledTimes(2)
-      expect(confirmInput.mock.calls[1][0].confirm.meta.warning).toBe(undefined)
+      expect(confirmInput).toHaveBeenCalledTimes(3)
+      expect(confirmInput.mock.calls[2][0].confirm.meta.warning).toBe(undefined)
     })
 
     it('should rerender when sync warning is cleared', () => {
@@ -1484,23 +1641,19 @@ const describeFields = (name, structure, combineReducers, setup) => {
 
       // username input rendered
       expect(usernameInput).toHaveBeenCalled()
-      expect(usernameInput).toHaveBeenCalledTimes(1)
-
-      // username field has warning
-      expect(usernameInput.mock.calls[0][0].username.meta.warning).toBe(
-        'Recommended'
-      )
-
-      // update username field so it passes
-      usernameInput.mock.calls[0][0].username.input.onChange('erikras')
-
-      // username input rerendered
       expect(usernameInput).toHaveBeenCalledTimes(2)
 
+      // username field has warning
+      expect(usernameInput.mock.calls[1][0].username.meta.warning).toBe('Recommended')
+
+      // update username field so it passes
+      usernameInput.mock.calls[1][0].username.input.onChange('erikras')
+
+      // username input rerendered
+      expect(usernameInput).toHaveBeenCalledTimes(4)
+
       // should be valid now
-      expect(usernameInput.mock.calls[1][0].username.meta.warning).toBe(
-        undefined
-      )
+      expect(usernameInput.mock.calls[3][0].username.meta.warning).toBe(undefined)
     })
 
     it('should provide correct prop structure', () => {
@@ -1716,9 +1869,7 @@ const describeFields = (name, structure, combineReducers, setup) => {
       // fighter is changed
       expect(renderFields).toHaveBeenCalledTimes(7)
       expect(renderFields.mock.calls[6][0].fighter.meta.active).toBe(true)
-      expect(renderFields.mock.calls[6][0].fighter.input.value).toBe(
-        'reduxForm'
-      )
+      expect(renderFields.mock.calls[6][0].fighter.input.value).toBe('reduxForm')
 
       // blur fighter
       renderFields.mock.calls[6][0].fighter.input.onBlur('@reduxForm')
@@ -1726,16 +1877,12 @@ const describeFields = (name, structure, combineReducers, setup) => {
       // fighter is blurred
       expect(renderFields).toHaveBeenCalledTimes(8)
       expect(renderFields.mock.calls[7][0].fighter.meta.active).toBe(false)
-      expect(renderFields.mock.calls[7][0].fighter.input.value).toBe(
-        '@reduxForm'
-      )
+      expect(renderFields.mock.calls[7][0].fighter.input.value).toBe('@reduxForm')
     })
   })
 }
 
-describeFields('Fields.plain', plain, plainCombineReducers, () =>
-  expect.extend(plainExpectations)
-)
+describeFields('Fields.plain', plain, plainCombineReducers, () => expect.extend(plainExpectations))
 describeFields('Fields.immutable', immutable, immutableCombineReducers, () =>
   expect.extend(immutableExpectations)
 )

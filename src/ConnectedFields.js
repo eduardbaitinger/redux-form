@@ -1,24 +1,24 @@
 // @flow
-import { Component, createElement } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import createFieldProps from './createFieldProps'
 import plain from './structure/plain'
 import onChangeValue from './events/onChangeValue'
+import type { ElementRef } from 'react'
 import type { Structure } from './types.js.flow'
 import type { Props } from './ConnectedFields.types'
+import validateComponentProp from './util/validateComponentProp'
 
 const propsToNotUpdateFor = ['_reduxForm']
 
-const createConnectedFields = (structure: Structure<*, *>) => {
+export default function createConnectedFields(structure: Structure<any, any>) {
   const { deepEqual, getIn, size } = structure
 
   const getSyncError = (syncErrors: Object, name: string) => {
     // Because the error for this field might not be at a level in the error structure where
     // it can be set directly, it might need to be unwrapped from the _error property
-    return (
-      plain.getIn(syncErrors, `${name}._error`) || plain.getIn(syncErrors, name)
-    )
+    return plain.getIn(syncErrors, `${name}._error`) || plain.getIn(syncErrors, name)
   }
 
   const getSyncWarning = (syncWarnings: Object, name: string) => {
@@ -28,10 +28,11 @@ const createConnectedFields = (structure: Structure<*, *>) => {
     return warning && warning._warning ? warning._warning : warning
   }
 
-  class ConnectedFields extends Component<Props> {
+  class ConnectedFields extends React.Component<Props> {
     onChangeFns = {}
     onFocusFns = {}
     onBlurFns = {}
+    ref: ElementRef<any> = React.createRef()
 
     constructor(props: Props) {
       super(props)
@@ -45,7 +46,7 @@ const createConnectedFields = (structure: Structure<*, *>) => {
         this.onBlurFns[name] = event => this.handleBlur(name, event)
       })
 
-    componentWillReceiveProps(nextProps: Props) {
+    UNSAFE_componentWillReceiveProps(nextProps: Props) {
       if (
         this.props.names !== nextProps.names &&
         (size(this.props.names) !== size(nextProps.names) ||
@@ -67,8 +68,7 @@ const createConnectedFields = (structure: Structure<*, *>) => {
         nextPropsKeys.length !== thisPropsKeys.length ||
         nextPropsKeys.some(prop => {
           return (
-            !~propsToNotUpdateFor.indexOf(prop) &&
-            !deepEqual(this.props[prop], nextProps[prop])
+            !~propsToNotUpdateFor.indexOf(prop) && !deepEqual(this.props[prop], nextProps[prop])
           )
         })
       )
@@ -82,14 +82,13 @@ const createConnectedFields = (structure: Structure<*, *>) => {
     getValues(): Object {
       const { _fields } = this.props
       return Object.keys(_fields).reduce(
-        (accumulator, name) =>
-          plain.setIn(accumulator, name, _fields[name].value),
+        (accumulator, name) => plain.setIn(accumulator, name, _fields[name].value),
         {}
       )
     }
 
     getRenderedComponent() {
-      return this.refs.renderedComponent
+      return this.ref.current
     }
 
     handleChange = (name: string, event: any): void => {
@@ -123,11 +122,9 @@ const createConnectedFields = (structure: Structure<*, *>) => {
     }
 
     render() {
-      const { component, withRef, _fields, _reduxForm, ...rest } = this.props
+      const { component, forwardRef, _fields, _reduxForm, ...rest } = this.props
       const { sectionPrefix, form } = _reduxForm
-      const { custom, ...props } = Object.keys(
-        _fields
-      ).reduce((accumulator, name) => {
+      const { custom, ...props } = Object.keys(_fields).reduce((accumulator, name) => {
         const connectedProps = _fields[name]
         const { custom, ...fieldProps } = createFieldProps(structure, name, {
           ...connectedProps,
@@ -138,43 +135,38 @@ const createConnectedFields = (structure: Structure<*, *>) => {
           onFocus: this.onFocusFns[name]
         })
         accumulator.custom = custom
-        const fieldName = sectionPrefix
-          ? name.replace(`${sectionPrefix}.`, '')
-          : name
+        const fieldName = sectionPrefix ? name.replace(`${sectionPrefix}.`, '') : name
         return plain.setIn(accumulator, fieldName, fieldProps)
       }, {})
-      if (withRef) {
-        props.ref = 'renderedComponent'
+      if (forwardRef) {
+        props.ref = this.ref
       }
 
-      return createElement(component, { ...props, ...custom })
+      return React.createElement(component, { ...props, ...custom })
     }
   }
 
   ConnectedFields.propTypes = {
-    component: PropTypes.oneOfType([PropTypes.func, PropTypes.string])
-      .isRequired,
+    component: validateComponentProp,
     _fields: PropTypes.object.isRequired,
     props: PropTypes.object
   }
 
   const connector = connect(
     (state, ownProps) => {
-      const { names, _reduxForm: { initialValues, getFormState } } = ownProps
+      const {
+        names,
+        _reduxForm: { initialValues, getFormState }
+      } = ownProps
       const formState = getFormState(state)
       return {
         _fields: names.reduce((accumulator, name) => {
           const initialState = getIn(formState, `initial.${name}`)
           const initial =
-            initialState !== undefined
-              ? initialState
-              : initialValues && getIn(initialValues, name)
+            initialState !== undefined ? initialState : initialValues && getIn(initialValues, name)
           const value = getIn(formState, `values.${name}`)
           const syncError = getSyncError(getIn(formState, 'syncErrors'), name)
-          const syncWarning = getSyncWarning(
-            getIn(formState, 'syncWarnings'),
-            name
-          )
+          const syncWarning = getSyncWarning(getIn(formState, 'syncWarnings'), name)
           const submitting = getIn(formState, 'submitting')
           const pristine = value === initial
           accumulator[name] = {
@@ -190,7 +182,7 @@ const createConnectedFields = (structure: Structure<*, *>) => {
             syncError,
             syncWarning,
             value,
-            _value: ownProps.value // save value passed in (for checkboxes)
+            _value: ownProps.value // save value passed in (for radios)
           }
           return accumulator
         }, {})
@@ -198,9 +190,7 @@ const createConnectedFields = (structure: Structure<*, *>) => {
     },
     undefined,
     undefined,
-    { withRef: true }
+    { forwardRef: true }
   )
   return connector(ConnectedFields)
 }
-
-export default createConnectedFields

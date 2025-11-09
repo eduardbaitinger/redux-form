@@ -7,8 +7,11 @@ import onChangeValue from './events/onChangeValue'
 import { dataKey } from './util/eventConsts'
 import plain from './structure/plain'
 import isReactNative from './isReactNative'
+import type { ElementRef } from 'react'
 import type { Structure } from './types.js.flow'
 import type { Props } from './ConnectedField.types'
+import validateComponentProp from './util/validateComponentProp'
+import isEvent from './events/isEvent'
 
 const propsToNotUpdateFor = ['_reduxForm']
 
@@ -23,26 +26,18 @@ const eventPreventDefault = event => {
 }
 
 const eventDataTransferGetData = (event, key) => {
-  if (
-    isObject(event) &&
-    isObject(event.dataTransfer) &&
-    isFunction(event.dataTransfer.getData)
-  ) {
+  if (isObject(event) && isObject(event.dataTransfer) && isFunction(event.dataTransfer.getData)) {
     return event.dataTransfer.getData(key)
   }
 }
 
 const eventDataTransferSetData = (event, key, value) => {
-  if (
-    isObject(event) &&
-    isObject(event.dataTransfer) &&
-    isFunction(event.dataTransfer.setData)
-  ) {
+  if (isObject(event) && isObject(event.dataTransfer) && isFunction(event.dataTransfer.setData)) {
     event.dataTransfer.setData(key, value)
   }
 }
 
-const createConnectedField = (structure: Structure<*, *>) => {
+function createConnectedField<L, M>(structure: Structure<L, M>) {
   const { deepEqual, getIn } = structure
   const getSyncError = (syncErrors: Object, name: string) => {
     const error = plain.getIn(syncErrors, name)
@@ -59,7 +54,7 @@ const createConnectedField = (structure: Structure<*, *>) => {
   }
 
   class ConnectedField extends Component<Props> {
-    ref: React.Component<*, *>
+    ref: ElementRef<any> = React.createRef()
 
     shouldComponentUpdate(nextProps: Props) {
       const nextPropsKeys = Object.keys(nextProps)
@@ -69,24 +64,24 @@ const createConnectedField = (structure: Structure<*, *>) => {
       return !!(
         this.props.children ||
         nextProps.children ||
-        (nextPropsKeys.length !== thisPropsKeys.length ||
-          nextPropsKeys.some(prop => {
-            return (
-              !~propsToNotUpdateFor.indexOf(prop) &&
-              !deepEqual(this.props[prop], nextProps[prop])
-            )
-          }))
+        nextPropsKeys.length !== thisPropsKeys.length ||
+        nextPropsKeys.some(prop => {
+          if (~(nextProps.immutableProps || []).indexOf(prop)) {
+            return this.props[prop] !== nextProps[prop]
+          }
+          return (
+            !~propsToNotUpdateFor.indexOf(prop) && !deepEqual(this.props[prop], nextProps[prop])
+          )
+        })
       )
     }
-
-    saveRef = (ref: React.Component<*, *>) => (this.ref = ref)
 
     isPristine = (): boolean => this.props.pristine
 
     getValue = (): any => this.props.value
 
-    getRenderedComponent(): React.Component<*, *> {
-      return this.ref
+    getRenderedComponent(): React.Component<any, any> {
+      return this.ref.current
     }
 
     handleChange = (event: any) => {
@@ -108,7 +103,7 @@ const createConnectedField = (structure: Structure<*, *>) => {
         // to prevent the following error:
         // `One of the sources for assign has an enumerable key on the prototype chain`
         // Reference: https://github.com/facebook/react-native/issues/5507
-        if (!isReactNative) {
+        if (!isReactNative && isEvent(event)) {
           onChange(
             {
               ...event,
@@ -118,10 +113,16 @@ const createConnectedField = (structure: Structure<*, *>) => {
               }
             },
             newValue,
-            previousValue
+            previousValue,
+            name
           )
         } else {
-          onChange(event, newValue, previousValue)
+          const onChangeResult = onChange(event, newValue, previousValue, name)
+          // Return value of change handler affecting preventDefault is RN
+          // specific behavior.
+          if (isReactNative) {
+            defaultPrevented = onChangeResult
+          }
         }
       }
       if (!defaultPrevented) {
@@ -141,15 +142,18 @@ const createConnectedField = (structure: Structure<*, *>) => {
       let defaultPrevented = false
       if (onFocus) {
         if (!isReactNative) {
-          onFocus({
-            ...event,
-            preventDefault: () => {
-              defaultPrevented = true
-              return eventPreventDefault(event)
-            }
-          })
+          onFocus(
+            {
+              ...event,
+              preventDefault: () => {
+                defaultPrevented = true
+                return eventPreventDefault(event)
+              }
+            },
+            name
+          )
         } else {
-          onFocus(event)
+          defaultPrevented = onFocus(event, name)
         }
       }
 
@@ -189,10 +193,11 @@ const createConnectedField = (structure: Structure<*, *>) => {
               }
             },
             newValue,
-            previousValue
+            previousValue,
+            name
           )
         } else {
-          onBlur(event, newValue, previousValue)
+          defaultPrevented = onBlur(event, newValue, previousValue, name)
         }
       }
 
@@ -208,22 +213,16 @@ const createConnectedField = (structure: Structure<*, *>) => {
     }
 
     handleDragStart = (event: any) => {
-      const { onDragStart, value } = this.props
+      const { name, onDragStart, value } = this.props
       eventDataTransferSetData(event, dataKey, value == null ? '' : value)
 
       if (onDragStart) {
-        onDragStart(event)
+        onDragStart(event, name)
       }
     }
 
     handleDrop = (event: any) => {
-      const {
-        name,
-        dispatch,
-        onDrop,
-        _reduxForm,
-        value: previousValue
-      } = this.props
+      const { name, dispatch, onDrop, _reduxForm, value: previousValue } = this.props
       const newValue = eventDataTransferGetData(event, dataKey)
 
       let defaultPrevented = false
@@ -237,7 +236,8 @@ const createConnectedField = (structure: Structure<*, *>) => {
             }
           },
           newValue,
-          previousValue
+          previousValue,
+          name
         )
       }
 
@@ -251,7 +251,7 @@ const createConnectedField = (structure: Structure<*, *>) => {
     render() {
       const {
         component,
-        withRef,
+        forwardRef,
         name,
         // remove props that are part of redux internals:
         _reduxForm, // eslint-disable-line no-unused-vars
@@ -261,6 +261,7 @@ const createConnectedField = (structure: Structure<*, *>) => {
         onFocus, // eslint-disable-line no-unused-vars
         onDragStart, // eslint-disable-line no-unused-vars
         onDrop, // eslint-disable-line no-unused-vars
+        immutableProps, // eslint-disable-line no-unused-vars
         ...rest
       } = this.props
       const { custom, ...props } = createFieldProps(structure, name, {
@@ -272,8 +273,8 @@ const createConnectedField = (structure: Structure<*, *>) => {
         onDragStart: this.handleDragStart,
         onFocus: this.handleFocus
       })
-      if (withRef) {
-        custom.ref = this.saveRef
+      if (forwardRef) {
+        custom.ref = this.ref
       }
       if (typeof component === 'string') {
         const { input, meta } = props // eslint-disable-line no-unused-vars
@@ -286,20 +287,20 @@ const createConnectedField = (structure: Structure<*, *>) => {
   }
 
   ConnectedField.propTypes = {
-    component: PropTypes.oneOfType([PropTypes.func, PropTypes.string])
-      .isRequired,
+    component: validateComponentProp,
     props: PropTypes.object
   }
 
   const connector = connect(
     (state, ownProps) => {
-      const { name, _reduxForm: { initialValues, getFormState } } = ownProps
+      const {
+        name,
+        _reduxForm: { initialValues, getFormState }
+      } = ownProps
       const formState = getFormState(state)
       const initialState = getIn(formState, `initial.${name}`)
       const initial =
-        initialState !== undefined
-          ? initialState
-          : initialValues && getIn(initialValues, name)
+        initialState !== undefined ? initialState : initialValues && getIn(initialValues, name)
       const value = getIn(formState, `values.${name}`)
       const submitting = getIn(formState, 'submitting')
       const syncError = getSyncError(getIn(formState, 'syncErrors'), name)
@@ -318,12 +319,12 @@ const createConnectedField = (structure: Structure<*, *>) => {
         syncWarning,
         initial,
         value,
-        _value: ownProps.value // save value passed in (for checkboxes)
+        _value: ownProps.value // save value passed in (for radios)
       }
     },
     undefined,
     undefined,
-    { withRef: true }
+    { forwardRef: true }
   )
   return connector(ConnectedField)
 }

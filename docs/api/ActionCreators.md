@@ -1,6 +1,6 @@
 # Action Creators
 
-[`View source on GitHub`](https://github.com/erikras/redux-form/blob/master/src/actions.js)
+[`View source on GitHub`](https://github.com/redux-form/redux-form/blob/master/src/actions.js)
 
 `redux-form` exports all of its internal action creators, allowing you complete
 control to dispatch any action you wish. However, it is recommended that you use
@@ -74,10 +74,12 @@ actions such as `CHANGE` or `BLUR`, the specific field.
 
 ### `clearFields(form:String, keepTouched: boolean, persistentSubmitErrors: boolean, ...fields:String)`
 
-> Cleans fields values for all the fields passed in.
+> Cleans fields values for all the fields passed in. Will reset to initialValue for each field if has any.
 
 > If the `keepTouched` parameter is `true`, the values of currently touched
-> fields will be retained If the `persistentSubmitErrors` parameter is `true`,
+> fields will be retained.
+
+> If the `persistentSubmitErrors` parameter is `true`,
 > the values of currently submit errors fields will be retained
 
 ### `destroy(...forms:String)`
@@ -88,7 +90,7 @@ actions such as `CHANGE` or `BLUR`, the specific field.
 
 > Marks the given field as `active` and `visited`.
 
-### `initialize(form:String, data:Object, [keepDirty:boolean], [options:{keepDirty:boolean, keepSubmitSucceeded:boolean, updateUnregisteredFields:boolean}])`
+### `initialize(form:String, data:Object, [keepDirty:boolean], [options:{keepDirty:boolean, keepSubmitSucceeded:boolean, updateUnregisteredFields:boolean, keepValues:boolean}])`
 
 > Sets the initial values in the form with which future data values will be
 > compared to calculate `dirty` and `pristine`. The `data` parameter may contain
@@ -107,6 +109,9 @@ actions such as `CHANGE` or `BLUR`, the specific field.
 > recommended, defaults to false because of non-breaking backwards
 > compatibility.
 
+> If the `keepValues` parameter is `true`, it will keep the old values and
+> initial values.
+
 ### `registerField(form:String, name:String, type:String)`
 
 > Registers a field with the form. The `type` parameter can be `Field` or
@@ -114,7 +119,12 @@ actions such as `CHANGE` or `BLUR`, the specific field.
 
 ### `reset(form:String)`
 
-> Resets the values in the form back to the values past in with the most recent
+> Resets the values in the form back to the values passed in with the most recent
+> `initialize` action.
+
+### `resetSection(form:String, ...sections:String)`
+
+> Resets the values in the form sections back to the values passed in with the most recent
 > `initialize` action.
 
 ### `setSubmitFailed(form:String, ...fields:String)`
@@ -159,4 +169,4 @@ actions such as `CHANGE` or `BLUR`, the specific field.
 
 ### `untouch(form:String, ...fields:String)`
 
-> Resets the 'touched' flag for all the fields passed in.
+> Resets the `touched` flag for all the fields passed in.

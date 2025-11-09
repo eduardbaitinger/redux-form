@@ -55,6 +55,7 @@ import {
   reduxForm,
   registerField,
   reset,
+  resetSection,
   setSubmitFailed,
   setSubmitSucceeded,
   startAsyncValidation,
@@ -71,7 +72,7 @@ import {
 
 describe('index', () => {
   it('should export actionTypes', () => {
-    expect(actionTypes).toEqual(expectedActionTypes)
+    expect(actionTypes).toEqual(expectedActionTypes.default)
   })
   it('should export arrayInsert', () => {
     expect(typeof arrayInsert).toBe('function')
@@ -131,19 +132,19 @@ describe('index', () => {
     expect(typeof destroy).toBe('function')
   })
   it('should export Field', () => {
-    expect(typeof Field).toBe('function')
+    expect(typeof Field).toBe('object')
   })
   it('should export Fields', () => {
-    expect(typeof Fields).toBe('function')
+    expect(typeof Fields).toBe('object')
   })
   it('should export FieldArray', () => {
-    expect(typeof FieldArray).toBe('function')
+    expect(typeof FieldArray).toBe('object')
   })
   it('should export Form', () => {
-    expect(typeof Form).toBe('function')
+    expect(typeof Form).toBe('object')
   })
   it('should export FormSection', () => {
-    expect(typeof FormSection).toBe('function')
+    expect(typeof FormSection).toBe('object')
   })
   it('should export focus', () => {
     expect(typeof focus).toBe('function')
@@ -222,6 +223,9 @@ describe('index', () => {
   })
   it('should export reset', () => {
     expect(typeof reset).toBe('function')
+  })
+  it('should export resetSection', () => {
+    expect(typeof resetSection).toBe('function')
   })
   it('should export startAsyncValidation', () => {
     expect(typeof startAsyncValidation).toBe('function')

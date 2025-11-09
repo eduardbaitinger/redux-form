@@ -1,15 +1,15 @@
 // @flow
 import actions from './actions'
 import * as _actionTypes from './actionTypes'
-export {
-  default as defaultShouldAsyncValidate
-} from './defaultShouldAsyncValidate'
+export { ReduxFormContext } from './ReduxFormContext'
+export { default as defaultShouldAsyncValidate } from './defaultShouldAsyncValidate'
 export { default as defaultShouldValidate } from './defaultShouldValidate'
 export { default as defaultShouldError } from './defaultShouldError'
 export { default as defaultShouldWarn } from './defaultShouldWarn'
 export { default as Form } from './Form'
+export { default as FormName } from './FormName'
 export { default as FormSection } from './FormSection'
-export { default as SubmissionError } from './SubmissionError'
+export { SubmissionError } from './SubmissionError'
 // alias for propTypes
 export {
   default as propTypes,
@@ -29,14 +29,13 @@ export { default as formValues } from './immutable/formValues'
 export { default as getFormError } from './immutable/getFormError'
 export { default as getFormNames } from './immutable/getFormNames'
 export { default as getFormValues } from './immutable/getFormValues'
-export {
-  default as getFormInitialValues
-} from './immutable/getFormInitialValues'
+export { default as getFormInitialValues } from './immutable/getFormInitialValues'
 export { default as getFormSyncErrors } from './immutable/getFormSyncErrors'
 export { default as getFormMeta } from './immutable/getFormMeta'
 export { default as getFormAsyncErrors } from './immutable/getFormAsyncErrors'
 export { default as getFormSyncWarnings } from './immutable/getFormSyncWarnings'
 export { default as getFormSubmitErrors } from './immutable/getFormSubmitErrors'
+export { default as isAsyncValidating } from './immutable/isAsyncValidating'
 export { default as isDirty } from './immutable/isDirty'
 export { default as isInvalid } from './immutable/isInvalid'
 export { default as isPristine } from './immutable/isPristine'
@@ -68,6 +67,7 @@ export const focus = actions.focus
 export const initialize = actions.initialize
 export const registerField = actions.registerField
 export const reset = actions.reset
+export const resetSection = actions.resetSection
 export const setSubmitFailed = actions.setSubmitFailed
 export const setSubmitSucceeded = actions.setSubmitSucceeded
 export const startAsyncValidation = actions.startAsyncValidation
@@ -79,3 +79,4 @@ export const touch = actions.touch
 export const unregisterField = actions.unregisterField
 export const untouch = actions.untouch
 export const updateSyncWarnings = actions.updateSyncWarnings
+export const updateSyncErrors = actions.updateSyncErrors

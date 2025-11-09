@@ -1,13 +1,18 @@
 // @flow
-import { Component, createElement } from 'react'
+import { Component, createElement, createRef } from 'react'
 import PropTypes from 'prop-types'
 import invariant from 'invariant'
+import get from 'lodash/get'
 import createConnectedFields from './ConnectedFields'
 import shallowCompare from './util/shallowCompare'
 import plain from './structure/plain'
 import prefixName from './util/prefixName'
+import { withReduxForm } from './ReduxFormContext'
 import type { Structure, ReactContext } from './types'
-import type { Props } from './FieldsProps.types'
+import type { Props as PropsWithoutContext, WarnAndValidateProp } from './FieldsProps.types'
+import validateComponentProp from './util/validateComponentProp'
+
+type Props = ReactContext & PropsWithoutContext
 
 const validateNameProp = prop => {
   if (!prop) {
@@ -20,16 +25,38 @@ const validateNameProp = prop => {
   }
 }
 
-const createFields = (structure: Structure<*, *>) => {
+const warnAndValidatePropType = PropTypes.oneOfType([
+  PropTypes.func,
+  PropTypes.arrayOf(PropTypes.func),
+  PropTypes.objectOf(PropTypes.oneOfType([PropTypes.func, PropTypes.arrayOf(PropTypes.func)]))
+])
+const fieldsPropTypes = {
+  component: validateComponentProp,
+  format: PropTypes.func,
+  parse: PropTypes.func,
+  props: PropTypes.object,
+  forwardRef: PropTypes.bool,
+  validate: warnAndValidatePropType,
+  warn: warnAndValidatePropType
+}
+
+const getFieldWarnAndValidate = (prop?: WarnAndValidateProp, name) =>
+  Array.isArray(prop) || typeof prop === 'function' ? prop : get(prop, name, undefined)
+
+export default function createFields(structure: Structure<any, any>) {
   const ConnectedFields = createConnectedFields(structure)
 
   class Fields extends Component<Props> {
-    constructor(props: Props, context: ReactContext) {
-      super((props: Props), (context: ReactContext))
-      if (!context._reduxForm) {
-        throw new Error(
-          'Fields must be inside a component decorated with reduxForm()'
-        )
+    connected = createRef<ConnectedFields>()
+
+    constructor(props: Props) {
+      super((props: Props))
+      if (!props._reduxForm) {
+        throw new Error('Fields must be inside a component decorated with reduxForm()')
+      }
+      const error = validateNameProp(props.names)
+      if (error) {
+        throw error
       }
     }
 
@@ -37,51 +64,58 @@ const createFields = (structure: Structure<*, *>) => {
       return shallowCompare(this, nextProps)
     }
 
-    componentWillMount() {
-      const error = validateNameProp(this.props.names)
-      if (error) {
-        throw error
-      }
-      const { context } = this
-      const { _reduxForm: { register } } = context
-      this.names.forEach(name => register(name, 'Field'))
+    componentDidMount() {
+      this.registerFields(this.props.names)
     }
 
-    componentWillReceiveProps(nextProps: Props) {
+    UNSAFE_componentWillReceiveProps(nextProps: Props) {
       if (!plain.deepEqual(this.props.names, nextProps.names)) {
-        const { context } = this
-        const { register, unregister } = context._reduxForm
+        const { props } = this
+        const { unregister } = props._reduxForm
         // unregister old name
-        this.props.names.forEach(name => unregister(prefixName(context, name)))
+        this.props.names.forEach(name => unregister(prefixName(props, name)))
         // register new name
-        nextProps.names.forEach(name =>
-          register(prefixName(context, name), 'Field')
-        )
+        this.registerFields(nextProps.names)
       }
     }
 
     componentWillUnmount() {
-      const { context } = this
-      const { unregister } = context._reduxForm
-      this.props.names.forEach(name => unregister(prefixName(context, name)))
+      const { props } = this
+      const { unregister } = props._reduxForm
+      this.props.names.forEach(name => unregister(prefixName(props, name)))
+    }
+
+    registerFields(names: string[]) {
+      const { props } = this
+      const {
+        _reduxForm: { register }
+      } = props
+      names.forEach(name =>
+        register(
+          prefixName(props, name),
+          'Field',
+          () => getFieldWarnAndValidate(this.props.validate, name),
+          () => getFieldWarnAndValidate(this.props.warn, name)
+        )
+      )
     }
 
     getRenderedComponent() {
       invariant(
-        this.props.withRef,
+        this.props.forwardRef,
         'If you want to access getRenderedComponent(), ' +
-          'you must specify a withRef prop to Fields'
+          'you must specify a forwardRef prop to Fields'
       )
-      return this.refs.connected.getWrappedInstance().getRenderedComponent()
+      return this.connected.current ? this.connected.current.getRenderedComponent() : null
     }
 
     get names(): string[] {
-      const { context } = this
-      return this.props.names.map(name => prefixName(context, name))
+      const { props } = this
+      return this.props.names.map(name => prefixName(props, name))
     }
 
     get dirty(): boolean {
-      return this.refs.connected.getWrappedInstance().isDirty()
+      return this.connected.current ? this.connected.current.isDirty() : false
     }
 
     get pristine(): boolean {
@@ -89,37 +123,23 @@ const createFields = (structure: Structure<*, *>) => {
     }
 
     get values(): Object {
-      return (
-        this.refs.connected &&
-        this.refs.connected.getWrappedInstance().getValues()
-      )
+      return this.connected.current ? this.connected.current.getValues() : {}
     }
 
     render() {
-      const { context } = this
+      const { props } = this
       return createElement(ConnectedFields, {
         ...this.props,
-        names: this.props.names.map(name => prefixName(context, name)),
-        _reduxForm: this.context._reduxForm,
-        ref: 'connected'
+        names: this.props.names.map(name => prefixName(props, name)),
+        ref: this.connected
       })
     }
   }
 
   Fields.propTypes = {
     names: (props, propName) => validateNameProp(props[propName]),
-    component: PropTypes.oneOfType([PropTypes.func, PropTypes.string])
-      .isRequired,
-    format: PropTypes.func,
-    parse: PropTypes.func,
-    props: PropTypes.object,
-    withRef: PropTypes.bool
-  }
-  Fields.contextTypes = {
-    _reduxForm: PropTypes.object
+    ...fieldsPropTypes
   }
 
-  return Fields
+  return withReduxForm(Fields)
 }
-
-export default createFields

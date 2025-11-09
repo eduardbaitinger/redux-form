@@ -6,39 +6,31 @@ import createConnectedField from './ConnectedField'
 import shallowCompare from './util/shallowCompare'
 import prefixName from './util/prefixName'
 import plain from './structure/plain'
-import type {
-  ConnectedComponent,
-  Structure,
-  ReactContext
-} from './types.js.flow'
-import type { InstanceApi as ConnectedFieldInstanceApi } from './ConnectedField.types'
-import type { Props } from './FieldProps.types'
+import { withReduxForm } from './ReduxFormContext'
+import type { ElementRef } from 'react'
+import type { Structure, ReactContext } from './types.js.flow'
+import type { Props as PropsWithoutContext } from './FieldProps.types'
+import validateComponentProp from './util/validateComponentProp'
 
-const createField = (structure: Structure<*, *>) => {
+type Props = ReactContext & PropsWithoutContext
+
+function createField(structure: Structure<any, any>) {
   const ConnectedField = createConnectedField(structure)
 
   const { setIn } = structure
 
   class Field extends Component<Props> {
-    context: ReactContext
+    ref: ElementRef<any> = React.createRef()
 
-    ref: ?ConnectedComponent<ConnectedFieldInstanceApi>
-
-    constructor(props: Props, context: ReactContext) {
-      super(props, context)
-      if (!context._reduxForm) {
-        throw new Error(
-          'Field must be inside a component decorated with reduxForm()'
-        )
+    constructor(props: Props) {
+      super(props)
+      if (!props._reduxForm) {
+        throw new Error('Field must be inside a component decorated with reduxForm()')
       }
     }
 
-    shouldComponentUpdate(nextProps: Props, nextState?: Object) {
-      return shallowCompare(this, nextProps, nextState)
-    }
-
-    componentWillMount() {
-      this.context._reduxForm.register(
+    componentDidMount() {
+      this.props._reduxForm.register(
         this.name,
         'Field',
         () => this.props.validate,
@@ -46,48 +38,47 @@ const createField = (structure: Structure<*, *>) => {
       )
     }
 
-    componentWillReceiveProps(nextProps: Props, nextContext: any) {
-      const oldName = prefixName(this.context, this.props.name)
-      const newName = prefixName(nextContext, nextProps.name)
+    shouldComponentUpdate(nextProps: Props, nextState?: Object) {
+      return shallowCompare(this, nextProps, nextState)
+    }
+
+    componentDidUpdate(prevProps: Props) {
+      const oldName = prefixName(prevProps, prevProps.name)
+      const newName = prefixName(this.props, this.props.name)
 
       if (
         oldName !== newName ||
         // use deepEqual here because they could be a function or an array of functions
-        !plain.deepEqual(this.props.validate, nextProps.validate) ||
-        !plain.deepEqual(this.props.warn, nextProps.warn)
+        !plain.deepEqual(prevProps.validate, this.props.validate) ||
+        !plain.deepEqual(prevProps.warn, this.props.warn)
       ) {
         // unregister old name
-        this.context._reduxForm.unregister(oldName)
+        this.props._reduxForm.unregister(oldName)
         // register new name
-        this.context._reduxForm.register(
+        this.props._reduxForm.register(
           newName,
           'Field',
-          () => nextProps.validate,
-          () => nextProps.warn
+          () => this.props.validate,
+          () => this.props.warn
         )
       }
     }
 
     componentWillUnmount() {
-      this.context._reduxForm.unregister(this.name)
+      this.props._reduxForm.unregister(this.name)
     }
 
-    saveRef = (ref: ?ConnectedComponent<ConnectedFieldInstanceApi>) =>
-      (this.ref = ref)
-
-    getRenderedComponent(): ?React.Component<*, *> {
+    getRenderedComponent(): ?Component<any, any> {
       invariant(
-        this.props.withRef,
+        this.props.forwardRef,
         'If you want to access getRenderedComponent(), ' +
-          'you must specify a withRef prop to Field'
+          'you must specify a forwardRef prop to Field'
       )
-      return this.ref
-        ? this.ref.getWrappedInstance().getRenderedComponent()
-        : undefined
+      return this.ref.current ? this.ref.current.getRenderedComponent() : undefined
     }
 
     get name(): string {
-      return prefixName(this.context, this.props.name)
+      return prefixName(this.props, this.props.name)
     }
 
     get dirty(): boolean {
@@ -95,11 +86,11 @@ const createField = (structure: Structure<*, *>) => {
     }
 
     get pristine(): boolean {
-      return !!(this.ref && this.ref.getWrappedInstance().isPristine())
+      return !!(this.ref.current && this.ref.current.isPristine())
     }
 
     get value(): any {
-      return this.ref && this.ref.getWrappedInstance().getValue()
+      return this.ref.current && this.ref.current.getValue()
     }
 
     normalize = (name: string, value: any): any => {
@@ -107,10 +98,10 @@ const createField = (structure: Structure<*, *>) => {
       if (!normalize) {
         return value
       }
-      const previousValues = this.context._reduxForm.getValues()
+      const previousValues = this.props._reduxForm.getValues()
       const previousValue = this.value
       const nextValues = setIn(previousValues, name, value)
-      return normalize(value, previousValue, nextValues, previousValues)
+      return normalize(value, previousValue, nextValues, previousValues, name)
     }
 
     render() {
@@ -118,16 +109,14 @@ const createField = (structure: Structure<*, *>) => {
         ...this.props,
         name: this.name,
         normalize: this.normalize,
-        _reduxForm: this.context._reduxForm,
-        ref: this.saveRef
+        ref: this.ref
       })
     }
   }
 
   Field.propTypes = {
     name: PropTypes.string.isRequired,
-    component: PropTypes.oneOfType([PropTypes.func, PropTypes.string])
-      .isRequired,
+    component: validateComponentProp,
     format: PropTypes.func,
     normalize: PropTypes.func,
     onBlur: PropTypes.func,
@@ -137,21 +126,14 @@ const createField = (structure: Structure<*, *>) => {
     onDrop: PropTypes.func,
     parse: PropTypes.func,
     props: PropTypes.object,
-    validate: PropTypes.oneOfType([
-      PropTypes.func,
-      PropTypes.arrayOf(PropTypes.func)
-    ]),
-    warn: PropTypes.oneOfType([
-      PropTypes.func,
-      PropTypes.arrayOf(PropTypes.func)
-    ]),
-    withRef: PropTypes.bool
-  }
-  Field.contextTypes = {
+    validate: PropTypes.oneOfType([PropTypes.func, PropTypes.arrayOf(PropTypes.func)]),
+    warn: PropTypes.oneOfType([PropTypes.func, PropTypes.arrayOf(PropTypes.func)]),
+    forwardRef: PropTypes.bool,
+    immutableProps: PropTypes.arrayOf(PropTypes.string),
     _reduxForm: PropTypes.object
   }
 
-  return Field
+  return withReduxForm(Field)
 }
 
 export default createField

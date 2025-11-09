@@ -1,6 +1,6 @@
 # `Fields`
 
-[`View source on GitHub`](https://github.com/erikras/redux-form/blob/master/src/Fields.js)
+[`View source on GitHub`](https://github.com/redux-form/redux-form/blob/master/src/Fields.js)
 
 The `Fields` component is similar to the
 [`Field`](https://redux-form.com/6.2.0/docs/api/Field.md/) component, but
@@ -65,13 +65,39 @@ by passing them into `props`.
 #### `parse : (value, name) => parsedValue` [optional]
 
 Parses the value given from the field input component to the type that you want
-stored in the Redux store. Common use cases are to parse currencies into
+to be stored in the Redux store. Common use cases are to parse currencies into
 `Number`s into currencies or localized date formats into `Date`s.
 
 `parse` is called with the field `value` and `name` as arguments and should
 return the new parsed value to be stored in the Redux store.
 
-#### `withRef : boolean` [optional]
+#### `validate : (value, allValues, props, name) => error` [optional]
+
+Allows you to to provide a field-level validation rule. The function is given
+the fields current value, all other form values, the props passed to the form,
+and the name of field currently being validated. If the field is valid it should
+return `undefined`. If the field is invalid it should return an error (usually,
+but not necessarily, a `String`). Note: if the validate prop changes the field
+will be re-registered.
+
+`validate` can be a function, an array of functions or an object. In the
+latest case, a property of the object is an element of `names` array. See the
+[Usage](#usage) section below for details.
+
+#### `warn : (value, allValues, props) => warning` [optional]
+
+Allows you to to provide a field-level warning rule. The function is given the
+fields current value, all other form values, and the props passed to the form.
+If the field does not need a warning it should return `undefined`. If the
+field needs a warning it should return the warning (usually, but not
+necessarily, a `String`). Note: if the warn prop changes the field will
+be re-registered.
+
+`warn` can be a function, an array of functions or an object. In the
+latest case, a property of the object is an element of `names` array. See the
+[Usage](#usage) section below for details.
+
+#### `forwardRef : boolean` [optional]
 
 If `true`, the rendered component will be available with the
 `getRenderedComponent()` method. Defaults to `false`. **Cannot be used if your
@@ -80,7 +106,7 @@ component is a stateless function component.**
 ## Usage
 
 The `component` prop will be passed to
-[`React.createElement()`](http://facebook.github.io/react/docs/top-level-api.html#react.createelement),
+[`React.createElement()`](https://reactjs.org/docs/react-api.html#createelement),
 which accepts one of two possible things:
 
 ### 1. A component
@@ -94,7 +120,7 @@ section below.
 ### 2. A stateless function
 
 This is the most flexible way to use `<Fields>`, as it gives you complete
-control over how the inputs is rendered. It is especially useful for displaying
+control over how the inputs are rendered. It is especially useful for displaying
 validation errors. It will also be the most familiar to people migrating from
 previous versions of `redux-form`. **You must define the stateless function
 outside of your `render()` method, or else it will be recreated on every render
@@ -103,7 +129,7 @@ different.** If you are defining your stateless function inside of `render()`,
 it will not only be slower, but your input will lose focus whenever the entire
 form component rerenders.
 
-```js
+```jsx
 // outside your render() method
 const renderFields = (fields) => (
   <div>
@@ -126,6 +152,23 @@ const renderFields = (fields) => (
 
 To learn what props will be passed to your stateless function, see the
 [Props](#props) section below.
+
+### Passing an object in `validate` and `warn` props
+
+The `validate` and `warn` props accepts an object: keys of the objects are elements of the `names` prop, entries of the object are validate and warn functions.
+
+```jsx
+<Fields
+  names={['foo', 'bar']}
+  component={input}
+  validate={{
+    foo: (value, allValues, props, name) => 'error'
+  }}
+  warn={{
+    foo: (value, allValues, props) => 'warning'
+  }}
+/>
+```
 
 ## Instance API
 
@@ -156,15 +199,13 @@ component.
 #### `getRenderedComponent()`
 
 > Returns the instance of the rendered component. For this to work, you must
-> provide a `withRef` prop, and your component must not be a stateless function
+> provide a `forwardRef` prop, and your component must not be a stateless function
 > component.
-
-####
 
 ## Props
 
 The props that `Fields` will pass to your component are
-[the same `input` and `meta` structures that `Field` generates](https://redux-form.com/7.2.3/docs/api/Field.md/#props),
+[the same `input` and `meta` structures that `Field` generates](https://redux-form.com/8.2.2/docs/api/Field.md/#props),
 except that they are broken up into the structure of the fields you gave as
 `names`.
 
@@ -174,7 +215,7 @@ the props structure given to your component
 For example, if the fields you gave are...
 
 ```jsx
-;<Fields
+<Fields
   names={[
     'name',
     'email',

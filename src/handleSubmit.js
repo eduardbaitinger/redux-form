@@ -1,11 +1,84 @@
 // @flow
 import isPromise from 'is-promise'
-import SubmissionError from './SubmissionError'
-import type { Dispatch } from 'redux'
+import type { SubmitFunction } from './types'
 import type { Props } from './createReduxForm'
+import { isSubmissionError } from './SubmissionError'
 
-type SubmitFunction = {
-  (values: any, dispatch: Dispatch<*>, props: Object): any
+const mergeErrors = ({ asyncErrors, syncErrors }) =>
+  asyncErrors && typeof asyncErrors.merge === 'function'
+    ? asyncErrors.merge(syncErrors).toJS()
+    : { ...asyncErrors, ...syncErrors }
+
+const executeSubmit = (submit: SubmitFunction, fields: string[], props: Props) => {
+  const {
+    dispatch,
+    submitAsSideEffect,
+    onSubmitFail,
+    onSubmitSuccess,
+    startSubmit,
+    stopSubmit,
+    setSubmitFailed,
+    setSubmitSucceeded,
+    values
+  } = props
+
+  let result
+  try {
+    result = submit(values, dispatch, props)
+  } catch (submitError) {
+    const error = isSubmissionError(submitError) ? submitError.errors : undefined
+    stopSubmit(error)
+    setSubmitFailed(...fields)
+    if (onSubmitFail) {
+      onSubmitFail(error, dispatch, submitError, props)
+    }
+    if (error || onSubmitFail) {
+      // if you've provided an onSubmitFail callback, don't re-throw the error
+      return error
+    } else {
+      throw submitError
+    }
+  }
+  if (submitAsSideEffect) {
+    if (result) {
+      dispatch(result)
+    }
+  } else {
+    if (isPromise(result)) {
+      startSubmit()
+      return result.then(
+        submitResult => {
+          stopSubmit()
+          setSubmitSucceeded()
+          if (onSubmitSuccess) {
+            onSubmitSuccess(submitResult, dispatch, props)
+          }
+          return submitResult
+        },
+        submitError => {
+          const error = isSubmissionError(submitError) ? submitError.errors : undefined
+          stopSubmit(error)
+          setSubmitFailed(...fields)
+          if (onSubmitFail) {
+            onSubmitFail(error, dispatch, submitError, props)
+          }
+          if (error || onSubmitFail) {
+            // if you've provided an onSubmitFail callback, don't re-throw the error
+            return error
+          } else {
+            throw submitError
+          }
+        }
+      )
+    } else {
+      setSubmitSucceeded()
+      if (onSubmitSuccess) {
+        onSubmitSuccess(result, dispatch, props)
+      }
+    }
+  }
+
+  return result
 }
 
 const handleSubmit = (
@@ -18,85 +91,16 @@ const handleSubmit = (
   const {
     dispatch,
     onSubmitFail,
-    onSubmitSuccess,
-    startSubmit,
-    stopSubmit,
     setSubmitFailed,
-    setSubmitSucceeded,
     syncErrors,
     asyncErrors,
     touch,
-    values,
     persistentSubmitErrors
   } = props
 
-  touch(...fields) // mark all fields as touched
+  touch(...fields)
 
   if (valid || persistentSubmitErrors) {
-    const doSubmit = () => {
-      let result
-      try {
-        result = submit(values, dispatch, props)
-      } catch (submitError) {
-        const error =
-          submitError instanceof SubmissionError
-            ? submitError.errors
-            : undefined
-        stopSubmit(error)
-        setSubmitFailed(...fields)
-        if (onSubmitFail) {
-          onSubmitFail(error, dispatch, submitError, props)
-        }
-        if (error || onSubmitFail) {
-          // if you've provided an onSubmitFail callback, don't re-throw the error
-          return error
-        } else {
-          throw submitError
-        }
-      }
-      if (isPromise(result)) {
-        startSubmit()
-        return result
-          .then(submitResult => {
-            try {
-              stopSubmit()
-              setSubmitSucceeded()
-              if (onSubmitSuccess) {
-                onSubmitSuccess(submitResult, dispatch, props)
-              }
-              return submitResult
-            } catch (err) {
-              throw err
-            }
-          })
-          .catch(submitError => {
-            const error =
-              submitError instanceof SubmissionError
-                ? submitError.errors
-                : undefined
-            stopSubmit(error)
-            setSubmitFailed(...fields)
-            if (error && onSubmitFail) {
-              onSubmitFail(error, dispatch, submitError, props)
-            } else if (error === undefined) {
-              console.error(submitError)
-            }
-            if (error || onSubmitFail) {
-              // if you've provided an onSubmitFail callback, don't re-throw the error
-              return error
-            } else {
-              throw submitError
-            }
-          })
-      } else {
-        setSubmitSucceeded()
-        if (onSubmitSuccess) {
-          onSubmitSuccess(result, dispatch, props)
-        }
-      }
-      return result
-    }
-
     const asyncValidateResult = asyncValidate && asyncValidate()
     if (asyncValidateResult) {
       return asyncValidateResult
@@ -104,7 +108,7 @@ const handleSubmit = (
           if (asyncErrors) {
             throw asyncErrors
           }
-          return doSubmit()
+          return executeSubmit(submit, fields, props)
         })
         .catch(asyncErrors => {
           setSubmitFailed(...fields)
@@ -114,11 +118,11 @@ const handleSubmit = (
           return Promise.reject(asyncErrors)
         })
     } else {
-      return doSubmit()
+      return executeSubmit(submit, fields, props)
     }
   } else {
     setSubmitFailed(...fields)
-    const errors = { ...asyncErrors, ...syncErrors }
+    const errors = mergeErrors({ asyncErrors, syncErrors })
     if (onSubmitFail) {
       onSubmitFail(errors, dispatch, null, props)
     }

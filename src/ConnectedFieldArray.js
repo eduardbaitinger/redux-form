@@ -6,13 +6,15 @@ import { bindActionCreators } from 'redux'
 import createFieldArrayProps from './createFieldArrayProps'
 import { mapValues } from 'lodash'
 import plain from './structure/plain'
+import type { ElementRef } from 'react'
 import type { Structure } from './types'
 import type { Props, DefaultProps } from './ConnectedFieldArray.types'
+import validateComponentProp from './util/validateComponentProp'
 
 const propsToNotUpdateFor = ['_reduxForm', 'value']
 
-const createConnectedFieldArray = (structure: Structure<*, *>) => {
-  const { deepEqual, getIn, size } = structure
+export default function createConnectedFieldArray(structure: Structure<any, any>) {
+  const { deepEqual, getIn, size, equals, orderChanged } = structure
   const getSyncError = (syncErrors: Object, name: string) => {
     // For an array, the error can _ONLY_ be under _error.
     // This is why this getSyncError is not the same as the
@@ -29,20 +31,21 @@ const createConnectedFieldArray = (structure: Structure<*, *>) => {
 
   class ConnectedFieldArray extends Component<Props> {
     static defaultProps: DefaultProps
-    ref: ?React.Component<*, *>
+    ref: ElementRef<any> = React.createRef()
 
     shouldComponentUpdate(nextProps: Props) {
       // Update if the elements of the value array was updated.
-      const thisValue = this.props.value
-      const nextValue = nextProps.value
+      const thisValue: any = this.props.value
+      const nextValue: any = nextProps.value
 
       if (thisValue && nextValue) {
-        let nextValueItemsSame = nextValue.every(val => ~thisValue.indexOf(val))
-        let nextValueItemsOrderChanged = nextValue.some(
-          (val, index) => val !== thisValue[index]
-        )
+        const nextValueItemsSame = equals(nextValue, thisValue) //.every(val => ~thisValue.indexOf(val))
+        const nextValueItemsOrderChanged = orderChanged(thisValue, nextValue)
+        const thisValueLength = thisValue.length || thisValue.size
+        const nextValueLength = nextValue.length || nextValue.size
+
         if (
-          thisValue.length !== nextValue.length ||
+          thisValueLength !== nextValueLength ||
           (nextValueItemsSame && nextValueItemsOrderChanged) ||
           (nextProps.rerenderOnEveryChange &&
             thisValue.some((val, index) => !deepEqual(val, nextValue[index])))
@@ -65,8 +68,7 @@ const createConnectedFieldArray = (structure: Structure<*, *>) => {
           //   console.info(prop, 'changed', this.props[ prop ], '==>', nextProps[ prop ])
           // }
           return (
-            !~propsToNotUpdateFor.indexOf(prop) &&
-            !deepEqual(this.props[prop], nextProps[prop])
+            !~propsToNotUpdateFor.indexOf(prop) && !deepEqual(this.props[prop], nextProps[prop])
           )
         })
       )
@@ -85,20 +87,15 @@ const createConnectedFieldArray = (structure: Structure<*, *>) => {
     }
 
     getRenderedComponent() {
-      return this.ref
+      return this.ref.current
     }
 
-    saveRef = (ref: ?React.Component<*, *>) => {
-      this.ref = ref
-    }
-
-    getValue = (index: number): any =>
-      this.props.value && getIn(this.props.value, String(index))
+    getValue = (index: number): any => this.props.value && getIn(this.props.value, String(index))
 
     render() {
       const {
         component,
-        withRef,
+        forwardRef,
         name,
         _reduxForm, // eslint-disable-line no-unused-vars
         validate, // eslint-disable-line no-unused-vars
@@ -114,16 +111,15 @@ const createConnectedFieldArray = (structure: Structure<*, *>) => {
         this.getValue,
         rest
       )
-      if (withRef) {
-        props.ref = this.saveRef
+      if (forwardRef) {
+        props.ref = this.ref
       }
       return createElement(component, props)
     }
   }
 
   ConnectedFieldArray.propTypes = {
-    component: PropTypes.oneOfType([PropTypes.func, PropTypes.string])
-      .isRequired,
+    component: validateComponentProp,
     props: PropTypes.object,
     rerenderOnEveryChange: PropTypes.bool
   }
@@ -132,17 +128,15 @@ const createConnectedFieldArray = (structure: Structure<*, *>) => {
     rerenderOnEveryChange: false
   }
 
-  ConnectedFieldArray.contextTypes = {
-    _reduxForm: PropTypes.object
-  }
-
   const connector = connect(
     (state, ownProps) => {
-      const { name, _reduxForm: { initialValues, getFormState } } = ownProps
+      const {
+        name,
+        _reduxForm: { initialValues, getFormState }
+      } = ownProps
       const formState = getFormState(state)
       const initial =
-        getIn(formState, `initial.${name}`) ||
-        (initialValues && getIn(initialValues, name))
+        getIn(formState, `initial.${name}`) || (initialValues && getIn(initialValues, name))
       const value = getIn(formState, `values.${name}`)
       const submitting = getIn(formState, 'submitting')
       const syncError = getSyncError(getIn(formState, 'syncErrors'), name)
@@ -189,14 +183,11 @@ const createConnectedFieldArray = (structure: Structure<*, *>) => {
           arraySwap,
           arrayUnshift
         },
-        actionCreator =>
-          bindActionCreators(actionCreator.bind(null, name), dispatch)
+        actionCreator => bindActionCreators(actionCreator.bind(null, name), dispatch)
       )
     },
     undefined,
-    { withRef: true }
+    { forwardRef: true }
   )
   return connector(ConnectedFieldArray)
 }
-
-export default createConnectedFieldArray

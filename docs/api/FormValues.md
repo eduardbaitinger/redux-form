@@ -1,6 +1,6 @@
 # `formValues(options:Object<String, String> | valuesMapper:Function | name1:String, name2:String, ...)`
 
-[`View source on GitHub`](https://github.com/erikras/redux-form/blob/master/src/formValues.js)
+[`View source on GitHub`](https://github.com/redux-form/redux-form/blob/master/src/formValues.js)
 
 > A decorator to read a selection of the current form values. This is useful for
 > subforms that change depending on the current values in the form.
@@ -20,7 +20,7 @@ import { formValues } from 'redux-form' // ES6
 ### name
 
 The path to the field, exactly like the `name` parameter of
-[`<Field/>`](https://redux-form.com/7.2.3/docs/api/Field.md/).
+[`<Field/>`](https://redux-form.com/8.2.2/docs/api/Field.md/).
 
 ### options: {prop: name, ...}
 

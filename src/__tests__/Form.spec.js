@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import { Provider } from 'react-redux'
 import { combineReducers as plainCombineReducers, createStore } from 'redux'
-import { combineReducers as immutableCombineReducers } from 'redux-immutablejs'
+import { combineReducers as immutableCombineReducers } from 'redux-immutable'
 import TestUtils from 'react-dom/test-utils'
 import createReduxForm from '../createReduxForm'
 import createReducer from '../createReducer'
@@ -13,7 +13,7 @@ import plainExpectations from '../structure/plain/__tests__/expectations'
 import immutable from '../structure/immutable'
 import immutableExpectations from '../structure/immutable/__tests__/expectations'
 
-import SubmissionError from '../SubmissionError'
+import { SubmissionError } from '../SubmissionError'
 import actions from '../actions'
 
 const {
@@ -26,8 +26,7 @@ const {
   updateSyncErrors
 } = actions
 
-const propsAtNthRender = (componentSpy, callNumber) =>
-  componentSpy.mock.calls[callNumber][0]
+const propsAtNthRender = (componentSpy, callNumber) => componentSpy.mock.calls[callNumber][0]
 
 const describeForm = (name, structure, combineReducers, setup) => {
   const reduxForm = createReduxForm(structure)
@@ -110,6 +109,7 @@ const describeForm = (name, structure, combineReducers, setup) => {
         }
       })
       const onSubmit = jest.fn().mockImplementation(() => 7)
+      const ref = React.createRef()
       class TestForm extends Component {
         render() {
           return (
@@ -120,20 +120,15 @@ const describeForm = (name, structure, combineReducers, setup) => {
         }
       }
       const DecoratedTestForm = reduxForm({ form: 'testForm' })(TestForm)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
-          <DecoratedTestForm />
+          <DecoratedTestForm ref={ref} />
         </Provider>
-      )
-
-      const decoratedForm = TestUtils.findRenderedComponentWithType(
-        dom,
-        DecoratedTestForm
       )
 
       expect(onSubmit).not.toHaveBeenCalled()
 
-      const result = decoratedForm.submit()
+      const result = ref.current.submit()
       expect(result).toBe(7)
 
       expect(onSubmit).toHaveBeenCalled()
@@ -191,6 +186,7 @@ const describeForm = (name, structure, combineReducers, setup) => {
         throw new SubmissionError({ _error: 'Invalid' })
       })
       const formRender = jest.fn()
+      const ref = React.createRef()
       class TestForm extends Component {
         render() {
           formRender(this.props)
@@ -202,23 +198,18 @@ const describeForm = (name, structure, combineReducers, setup) => {
         }
       }
       const DecoratedTestForm = reduxForm({ form: 'testForm' })(TestForm)
-      const dom = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <Provider store={store}>
-          <DecoratedTestForm />
+          <DecoratedTestForm ref={ref} />
         </Provider>
       )
 
       expect(formRender).toHaveBeenCalled()
       expect(formRender).toHaveBeenCalledTimes(1)
 
-      const decoratedForm = TestUtils.findRenderedComponentWithType(
-        dom,
-        DecoratedTestForm
-      )
-
       expect(onSubmit).not.toHaveBeenCalled()
 
-      decoratedForm.submit()
+      ref.current.submit()
 
       expect(onSubmit).toHaveBeenCalled()
       expect(onSubmit).toHaveBeenCalledTimes(1)
@@ -281,14 +272,10 @@ const describeForm = (name, structure, combineReducers, setup) => {
       expect(logger.mock.calls[callIndex++][1]).toEqual(clearSubmit('testForm'))
 
       // check that touch action was dispatched
-      expect(logger.mock.calls[callIndex++][1]).toEqual(
-        touch('testForm', 'foo')
-      )
+      expect(logger.mock.calls[callIndex++][1]).toEqual(touch('testForm', 'foo'))
 
       // check that setSubmitFailed action was dispatched
-      expect(logger.mock.calls[callIndex++][1]).toEqual(
-        setSubmitFailed('testForm', 'foo')
-      )
+      expect(logger.mock.calls[callIndex++][1]).toEqual(setSubmitFailed('testForm', 'foo'))
 
       // form rerendered twice, once with submit trigger, and then after submit failure
       expect(formRender).toHaveBeenCalledTimes(4)
@@ -304,9 +291,7 @@ const describeForm = (name, structure, combineReducers, setup) => {
       )
 
       // check that updateSyncErrors action was dispatched
-      expect(logger.mock.calls[callIndex++][1]).toEqual(
-        updateSyncErrors('testForm', {})
-      )
+      expect(logger.mock.calls[callIndex++][1]).toEqual(updateSyncErrors('testForm', {}))
 
       // rerendered once to flip dirty flag, and again to flip invalid flag
       expect(formRender).toHaveBeenCalledTimes(6)
@@ -326,14 +311,10 @@ const describeForm = (name, structure, combineReducers, setup) => {
       expect(logger.mock.calls[callIndex++][1]).toEqual(clearSubmit('testForm'))
 
       // check that touch action was dispatched
-      expect(logger.mock.calls[callIndex++][1]).toEqual(
-        touch('testForm', 'foo')
-      )
+      expect(logger.mock.calls[callIndex++][1]).toEqual(touch('testForm', 'foo'))
 
       // check that submit succeeded action was dispatched
-      expect(logger.mock.calls[callIndex++][1]).toEqual(
-        setSubmitSucceeded('testForm')
-      )
+      expect(logger.mock.calls[callIndex++][1]).toEqual(setSubmitSucceeded('testForm'))
 
       // check no additional actions dispatched
       expect(logger).toHaveBeenCalledTimes(callIndex)
@@ -347,9 +328,7 @@ const describeForm = (name, structure, combineReducers, setup) => {
   })
 }
 
-describeForm('Form.plain', plain, plainCombineReducers, () =>
-  expect.extend(plainExpectations)
-)
+describeForm('Form.plain', plain, plainCombineReducers, () => expect.extend(plainExpectations))
 describeForm('Form.immutable', immutable, immutableCombineReducers, () =>
   expect.extend(immutableExpectations)
 )

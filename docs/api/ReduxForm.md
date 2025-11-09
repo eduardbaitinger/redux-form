@@ -1,6 +1,6 @@
 # `reduxForm(config:Object)`
 
-[`View source on GitHub`](https://github.com/erikras/redux-form/blob/master/src/reduxForm.js)
+[`View source on GitHub`](https://github.com/redux-form/redux-form/blob/master/src/reduxForm.js)
 
 Creates a decorator with which you use `redux-form` to connect your form
 component to Redux. It takes a `config` parameter which lets you configure your
@@ -30,7 +30,7 @@ at "design time" or passed in as props to your component at runtime.**
 
 ### Optional
 
-#### -`asyncBlurFields : Array<String>` [optional]
+#### `asyncBlurFields : Array<String>` [optional]
 
 > field names for which `onBlur` should trigger a call to the `asyncValidate`
 > function. Defaults to triggering the async validation when any field is
@@ -39,16 +39,16 @@ at "design time" or passed in as props to your component at runtime.**
 > async validation only being run before submission.
 
 > See
-> [Asynchronous Blur Validation Example](https://redux-form.com/7.2.3/examples/asyncValidation/)
+> [Asynchronous Blur Validation Example](https://redux-form.com/8.2.2/examples/asyncValidation/)
 > for more details.
 
-#### -`asyncChangeFields : Array<String>` [optional]
+#### `asyncChangeFields : Array<String>` [optional]
 
 > field names for which `onChange` should trigger a call to the `asyncValidate`
 > function.
 
 > See
-> [Asynchronous Change Validation Example](https://redux-form.com/7.2.3/examples/asyncChangeFieldsValidation/)
+> [Asynchronous Change Validation Example](https://redux-form.com/8.2.2/examples/asyncChangeValidation/)
 > for more details.
 
 #### `asyncValidate : (values:Object, dispatch:Function, props:Object, blurredField:String) => Promise<undefined, errors:Object>` [optional]
@@ -59,7 +59,7 @@ at "design time" or passed in as props to your component at runtime.**
 > object of validation errors in the form `{ field1: <String>, field2: <String> }`.
 
 > See
-> [Asynchronous Blur Validation Example](https://redux-form.com/7.2.3/examples/asyncValidation/)
+> [Asynchronous Blur Validation Example](https://redux-form.com/8.2.2/examples/asyncValidation/)
 > for more details.
 
 #### `destroyOnUnmount : boolean` [optional]
@@ -108,9 +108,14 @@ at "design time" or passed in as props to your component at runtime.**
 > form submission; it prevents reinitialization from overwriting user changes.
 > Defaults to `false`.
 
+#### `submitAsSideEffect : boolean` [optional]
+
+> When set to `true`, the return value of `onSubmit` function will be dispatched
+> as a Redux action. **IMPORTANT: When set, submission lifecycle is not run automatically**
+
 #### `updateUnregisteredFields : boolean` [optional]
 
-> Used in combination with `keepDirty(OnReinitialize)`. Will update every
+> Used in combination with `keepDirtyOnReinitialize`. Will update every
 > initialValue which is still pristine. Normally only registered Fields will be
 > updated. In most cases, this option should be set to `true` to work as
 > expected and avoid edge cases. It defaults to `false` because of non-breaking
@@ -241,9 +246,10 @@ at "design time" or passed in as props to your component at runtime.**
 
 > ##### `trigger : String` [required]
 
-> The reason to possibly run async validation. It will either be: `'blur'` or
-> `'submit'`, depending on whether an async blur field had triggered the async
-> validation or if submitting the form has triggered it, respectively.
+> The reason to possibly run async validation. It will be one of `'blur'`,
+> `'change'` and `'submit'`, depending on whether a field, either blurred or
+> changed, had triggered the async validation or if submitting the form has
+> triggered it, respectively.
 
 > ##### `blurredField : string` [optional]
 
@@ -384,7 +390,7 @@ switch (trigger) {
 > validation fails, it should return the validation errors in the form `{ field1: <String>, field2: <String> }`. Defaults to `(values, props) => ({})`.
 
 > See
-> [Synchronous Validation Example](https://redux-form.com/7.2.3/examples/syncValidation/)
+> [Synchronous Validation Example](https://redux-form.com/8.2.2/examples/syncValidation/)
 > for more details.
 
 #### `warn : (values:Object, props:Object) => warnings:Object` [optional]
@@ -421,6 +427,10 @@ otherwise.
 #### `reset() : void`
 
 Resets the form to the `initialValues`. It will be `pristine` after reset.
+
+#### `resetSection(...sections:String) : void`
+
+Resets the form sections to the `initialValues`. It will be `pristine` after reset.
 
 #### `submit() : Promise`
 

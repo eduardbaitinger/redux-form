@@ -7,18 +7,18 @@ export type Props = {
   asyncError: any,
   asyncValidating: boolean,
   onBlur: {
-    (event: Event, newValue: ?any, previousValue: ?any): void
+    (event: Event, newValue: ?any, previousValue: ?any, name: ?string): void
   },
   onChange: {
-    (event: Event, newValue: ?any, previousValue: ?any): void
+    (event: Event, newValue: ?any, previousValue: ?any, name: ?string): void
   },
   onDrop: {
-    (event: Event, newValue: ?any, previousValue: ?any): void
+    (event: Event, newValue: ?any, previousValue: ?any, name: ?string): void
   },
-  onDragStart: { (event: Event): void },
-  onFocus: { (event: Event): void },
+  onDragStart: { (event: Event, name: ?string): void },
+  onFocus: { (event: Event, name: ?string): void },
   dirty: boolean,
-  dispatch: Dispatch<*>,
+  dispatch: Dispatch<any>,
   form: string,
   format?: { (value: any, name: string): any },
   initial: any,
@@ -74,8 +74,8 @@ const processProps = (
   return props
 }
 
-const createFieldProps = (
-  { getIn, toJS, deepEqual }: Structure<*, *>,
+export default function createFieldProps(
+  { getIn, toJS, deepEqual }: Structure<any, any>,
   name: string,
   {
     asyncError,
@@ -105,7 +105,7 @@ const createFieldProps = (
     warn, // eslint-disable-line no-unused-vars
     ...custom
   }: Props
-): FieldProps => {
+): FieldProps {
   const error = syncError || asyncError || submitError
   const warning = syncWarning
 
@@ -156,5 +156,3 @@ const createFieldProps = (
     custom: { ...custom, ...props }
   }
 }
-
-export default createFieldProps
